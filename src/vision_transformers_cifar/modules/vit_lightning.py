@@ -1,39 +1,45 @@
+from typing import Any
+
 import lightning as L
 import torch
+from torch import nn
 
 from vision_transformers_cifar.models import VisionTransformer
 
 
 class VisionTransformerLightningModule(L.LightningModule):
-    def __init__(self, model_kwargs, lr):
+    def __init__(self, model_kwargs: dict[str, Any], lr: float):
         super().__init__()
         self.save_hyperparameters()
         self.model = VisionTransformer(**model_kwargs)
+
+        self.loss_fn = nn.CrossEntropyLoss()
 
     def forward(self, x):
         return self.model(x)
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr)
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[100, 150], gamma=0.1)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.trainer.max_epochs)
         return [optimizer], [lr_scheduler]
 
-    def _calculate_loss(self, batch, mode="train"):
+    def _common_step(self, batch, mode="train"):
         imgs, labels = batch
         preds = self.model(imgs)
-        loss = torch.nn.functional.cross_entropy(preds, labels)
-        acc = (preds.argmax(dim=-1) == labels).float().mean()
+        loss = self.loss_fn(preds, labels)
 
-        self.log(f"{mode}_loss", loss)
-        self.log(f"{mode}_acc", acc)
-        return loss
+        accuracy = (preds.argmax(dim=-1) == labels).float().mean()
+
+        self.log(f"{mode}_loss", loss, prog_bar=True, on_epoch=True)
+        self.log(f"{mode}_acc", accuracy, prog_bar=True, on_epoch=True)
+        return loss, accuracy
 
     def training_step(self, batch, batch_idx):
-        loss = self._calculate_loss(batch, mode="train")
+        loss, accuracy = self._common_step(batch, mode="train")
         return loss
 
     def validation_step(self, batch, batch_idx):
-        self._calculate_loss(batch, mode="val")
+        self._common_step(batch, mode="val")
 
     def test_step(self, batch, batch_idx):
-        self._calculate_loss(batch, mode="test")
+        self._common_step(batch, mode="test")
