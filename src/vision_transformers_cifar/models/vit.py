@@ -23,15 +23,15 @@ class VisionTransformer(nn.Module):
 
     def __init__(
         self,
-        embed_dim,
-        hidden_dim,
-        num_channels,
-        num_heads,
-        num_layers,
-        num_classes,
-        patch_size,
-        num_patches,
-        dropout=0.0,
+        embed_dim: int,
+        hidden_dim: int,
+        num_channels: int,
+        num_heads: int,
+        num_layers: int,
+        num_classes: int,
+        patch_size: int,
+        num_patches: int,
+        dropout: float = 0.0,
     ) -> None:
         super().__init__()
 
