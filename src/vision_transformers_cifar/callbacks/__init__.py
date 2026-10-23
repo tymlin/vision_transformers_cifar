@@ -1,1 +1,3 @@
-from .callbacks import FinalMetricsCallback, ModuleSummaryCallback, RichModelSummaryCallback, RichProgressBarCallback
+from .metrics import FinalMetricsCallback, MetricsPlotCallback
+from .rich import RichProgressBarCallback
+from .summary import ModuleSummaryCallback, RichModelSummaryCallback

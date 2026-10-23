@@ -2,6 +2,7 @@ import lightning as L
 
 from vision_transformers_cifar.callbacks import (
     FinalMetricsCallback,
+    MetricsPlotCallback,
     ModuleSummaryCallback,
     RichModelSummaryCallback,
     RichProgressBarCallback,
@@ -34,6 +35,7 @@ if __name__ == "__main__":
     run_name_suffix = f"_{RUN_NAME_SUFFIX}" if RUN_NAME_SUFFIX else ""
     run_dirpath = RUNS_DIRPATH / f"{NOW}{run_name_suffix}"
     configure_logger(run_dirpath=run_dirpath)
+    logger.info(f"Logging into directory: `{run_dirpath}`")
 
     seed_everything(SEED)
 
@@ -51,6 +53,7 @@ if __name__ == "__main__":
         drop_last=True,
         shuffle=True,
         persistent_workers=True,
+        seed=SEED,
     )
     train_dataloader = datamodule.get_train_dataloader()
     validation_dataloader = datamodule.get_val_dataloader()
@@ -65,18 +68,32 @@ if __name__ == "__main__":
         devices=1,
         max_epochs=MAX_EPOCHS,
         callbacks=[
-            L.pytorch.callbacks.ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
             L.pytorch.callbacks.LearningRateMonitor("epoch"),
             ModuleSummaryCallback(),
             RichModelSummaryCallback(max_depth=2),
             RichProgressBarCallback(),
+            MetricsPlotCallback(),
             FinalMetricsCallback(),
+            L.pytorch.callbacks.ModelCheckpoint(
+                dirpath=run_dirpath / "checkpoints",
+                mode="max",
+                monitor="val_acc",
+                save_last=True,
+            ),
         ],
-        logger=L.pytorch.loggers.TensorBoardLogger(
-            save_dir=run_dirpath,
-            name="tensorboard",
-            default_hp_metric=False,
-        ),
+        logger=[
+            L.pytorch.loggers.TensorBoardLogger(
+                save_dir=run_dirpath,
+                name="tensorboard",
+                version="",
+                default_hp_metric=False,
+            ),
+            L.pytorch.loggers.CSVLogger(
+                save_dir=run_dirpath,
+                version="",
+                name="csv",
+            ),
+        ],
         log_every_n_steps=1,
     )
 

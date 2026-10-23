@@ -13,7 +13,7 @@ def seed_everything(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    L.seed_everything(seed)
+    L.seed_everything(seed, workers=True, verbose=False)
 
 
 def check_torch_devices_availability(as_dict: bool = False) -> dict[Device, bool] | list[Device]:

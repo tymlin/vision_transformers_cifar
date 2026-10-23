@@ -1,11 +1,10 @@
 import textwrap
 
-from lightning.pytorch.callbacks import Callback, RichModelSummary, RichProgressBar
+from lightning.pytorch.callbacks import Callback, RichModelSummary
 from rich import get_console
 from rich.text import Text
 
 from vision_transformers_cifar.loggers import logger
-from vision_transformers_cifar.utils.progress import progress_to_str
 
 
 class ModuleSummaryCallback(Callback):
@@ -48,39 +47,3 @@ class RichModelSummaryCallback(RichModelSummary):
 
         summary = Text.from_ansi(captured.get()).plain.rstrip()
         logger.info(f"\n{summary}")
-
-
-class RichProgressBarCallback(RichProgressBar):
-    def __init__(self):
-        super().__init__(
-            refresh_rate=10,
-            console_kwargs={
-                "force_terminal": True,
-                "force_interactive": True,
-            },
-        )
-
-    def on_train_epoch_end(self, trainer, pl_module):
-        super().on_train_epoch_end(trainer, pl_module)
-
-        if not trainer.is_global_zero or self.progress is None:
-            return
-
-        logger.bind(file_only=True).info(f"\n{progress_to_str(self.progress)}")
-
-
-class FinalMetricsCallback(Callback):
-    def on_train_end(self, trainer, pl_module):
-        if not trainer.is_global_zero:
-            return
-
-        metrics = trainer.callback_metrics
-        summary = "\n".join(
-            f"\t{name}: {float(value):.4f}"
-            for name, value in metrics.items()
-            if name.startswith(("train_", "val_", "test_"))
-            and not name.endswith("_step")
-            and f"{name}_epoch" not in metrics
-        )
-
-        logger.info(f"Final epoch metrics:\n{summary}")
