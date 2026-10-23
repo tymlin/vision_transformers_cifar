@@ -20,12 +20,29 @@ class ModuleSummaryCallback(Callback):
         model_structure = str(pl_module.model)
         model_summary = pl_module.model.summary(input_shape)
         optim_info = "\n\n".join(str(optimizer) for optimizer in trainer.optimizers)
+        scheduler_summaries = []
+        for config in trainer.lr_scheduler_configs:
+            scheduler = config.scheduler
+            details = [f"{name}: {value}" for name, value in scheduler.state_dict().items()]
+            details.extend(
+                [
+                    f"interval: {config.interval}",
+                    f"frequency: {config.frequency}",
+                ]
+            )
+            if config.monitor is not None:
+                details.append(f"monitor: {config.monitor}")
+
+            details_text = textwrap.indent("\n".join(details), "    ")
+            scheduler_summaries.append(f"{type(scheduler).__name__}:\n{details_text}")
+        scheduler_info = "\n\n".join(scheduler_summaries) or "None"
         loss_fn_info = str(pl_module.loss_fn)
 
         module_info_dict = {
             "Model structure": model_structure,
             "Model summary": model_summary,
             "Optimizer": optim_info,
+            "LR scheduler": scheduler_info,
             "Loss function": loss_fn_info,
         }
 

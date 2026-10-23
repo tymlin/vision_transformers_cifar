@@ -11,7 +11,7 @@ from torch import Tensor
 from torchvision.datasets import VisionDataset
 
 from vision_transformers_cifar.consts import DATASETS_DIRPATH
-from vision_transformers_cifar.data.types import DatasetSplit, DatasetType
+from vision_transformers_cifar.data.types import DatasetSplit
 from vision_transformers_cifar.loggers import logger
 from vision_transformers_cifar.utils.files import create_directory
 

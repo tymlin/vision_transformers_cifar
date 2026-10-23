@@ -38,6 +38,7 @@ class BaseModel(nn.Module, ABC):
                 col_names=col_names,
                 verbose=0,
                 device=self.device,
+                dtypes=[self.dtype],
             )
         )
         return model_summary

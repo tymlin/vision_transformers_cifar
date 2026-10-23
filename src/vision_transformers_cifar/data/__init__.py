@@ -4,13 +4,12 @@ from vision_transformers_cifar.data.datasets import (
     ImageDataset,
 )
 from vision_transformers_cifar.data.transforms import build_transform
-from vision_transformers_cifar.data.types import DatasetSplit, DatasetType
+from vision_transformers_cifar.data.types import DatasetSplit
 
 __all__ = [
     "DataModule",
     "ImageDataset",
     "CIFAR10Dataset",
     "DatasetSplit",
-    "DatasetType",
     "build_transform",
 ]
