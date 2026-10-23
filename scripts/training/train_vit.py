@@ -1,5 +1,11 @@
 import lightning as L
 
+from vision_transformers_cifar.callbacks import (
+    FinalMetricsCallback,
+    ModuleSummaryCallback,
+    RichModelSummaryCallback,
+    RichProgressBarCallback,
+)
 from vision_transformers_cifar.consts import NOW, RUNS_DIRPATH
 from vision_transformers_cifar.data import CIFAR10Dataset, DataModule, DatasetSplit, build_transform
 from vision_transformers_cifar.loggers import configure_logger, logger
@@ -37,7 +43,7 @@ if __name__ == "__main__":
 
     datamodule = DataModule(
         train_ds=train_ds,
-        val_ds=test_ds,
+        val_ds=test_ds,  # use test as validation
         test_ds=test_ds,
         batch_size=32,
         num_workers=8,
@@ -48,9 +54,10 @@ if __name__ == "__main__":
     )
     train_dataloader = datamodule.get_train_dataloader()
     validation_dataloader = datamodule.get_val_dataloader()
+    test_dataloader = datamodule.get_test_dataloader()
 
     device = auto_detect_device()
-    logger.info("Using device:", device)
+    logger.info(f"Using device: `{device}`")
 
     trainer = L.Trainer(
         default_root_dir=run_dirpath,
@@ -60,16 +67,18 @@ if __name__ == "__main__":
         callbacks=[
             L.pytorch.callbacks.ModelCheckpoint(save_weights_only=True, mode="max", monitor="val_acc"),
             L.pytorch.callbacks.LearningRateMonitor("epoch"),
+            ModuleSummaryCallback(),
+            RichModelSummaryCallback(max_depth=2),
+            RichProgressBarCallback(),
+            FinalMetricsCallback(),
         ],
+        logger=L.pytorch.loggers.TensorBoardLogger(
+            save_dir=run_dirpath,
+            name="tensorboard",
+            default_hp_metric=False,
+        ),
+        log_every_n_steps=1,
     )
-
-    trainer.logger._log_graph = True  # If True, we plot the computation graph in tensorboard
-    trainer.logger._default_hp_metric = None  # Optional logging argument that we don't need
 
     model = VisionTransformerLightningModule(model_kwargs=MODEL_KWARGS, lr=LR)
     trainer.fit(model, train_dataloader, validation_dataloader)
-
-    model = VisionTransformerLightningModule.load_from_checkpoint(trainer.checkpoint_callback.best_model_path)
-    train_result = trainer.test(model, dataloaders=train_dataloader, verbose=False)
-    test_result = trainer.test(model, dataloaders=validation_dataloader, verbose=False)
-    result = {"train": train_result[0]["test_acc"], "test": test_result[0]["test_acc"]}

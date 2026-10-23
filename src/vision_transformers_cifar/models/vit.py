@@ -1,11 +1,12 @@
 import torch
-from torch import nn
+from torch import Tensor, nn
 
 from vision_transformers_cifar.blocks import AttentionBlock
+from vision_transformers_cifar.models.base import BaseModel
 from vision_transformers_cifar.models.ops_utils import img_to_patch
 
 
-class VisionTransformer(nn.Module):
+class VisionTransformer(BaseModel):
     """Vision Transformer.
 
     embed_dim: Dimensionality of the input feature vectors to the Transformer
@@ -64,7 +65,7 @@ class VisionTransformer(nn.Module):
         # num of patches + one class token
         self.pos_embedding = nn.Parameter(torch.randn(1, 1 + num_patches, embed_dim))
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         # Preprocess input
         patches = img_to_patch(
             x,

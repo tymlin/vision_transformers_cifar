@@ -1,5 +1,4 @@
-import torch
-from torch import nn
+from torch import Tensor, nn
 
 
 class AttentionBlock(nn.Module):
@@ -32,7 +31,7 @@ class AttentionBlock(nn.Module):
             nn.Dropout(dropout),
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         yln1 = self.layer_norm_1(x)
         # yln1 shape: (B, L, E)
         att_o, _ = self.attn(yln1, yln1, yln1)

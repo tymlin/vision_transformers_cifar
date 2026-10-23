@@ -1,11 +1,12 @@
 import torch
+from torch import Tensor
 
 
 def img_to_patch(
-    x: torch.Tensor,
+    x: Tensor,
     patch_size: int,
     flatten_channels: bool = True,
-) -> torch.Tensor:
+) -> Tensor:
     """Converts an image tensor to patches.
 
     :param x: torch.Tensor - input image tensor

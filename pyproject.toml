@@ -15,7 +15,9 @@ dependencies = [
     "pillow>=13.0.0",
     "pyaml>=26.7.0",
     "rich>=15.0.0",
+    "tensorboard>=2.21.0",
     "torch>=2.14.1",
+    "torchinfo>=1.8.0",
     "torchvision>=0.29.1",
 ]
 
