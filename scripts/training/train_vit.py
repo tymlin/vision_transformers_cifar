@@ -1,4 +1,6 @@
 import lightning as L
+from torch.utils.data import default_collate
+from torchvision.transforms import v2
 
 from vision_transformers_cifar.callbacks import (
     FinalMetricsCallback,
@@ -7,16 +9,41 @@ from vision_transformers_cifar.callbacks import (
     RichModelSummaryCallback,
     RichProgressBarCallback,
 )
-from vision_transformers_cifar.config import RunConfig
+from vision_transformers_cifar.config import DataConfig, RunConfig, TrainerConfig, ViTModelConfig
 from vision_transformers_cifar.consts import NOW
-from vision_transformers_cifar.data import CIFAR10Dataset, DataModule, build_transform
+from vision_transformers_cifar.data import (
+    CIFAR10Dataset,
+    DataModule,
+    build_augmix_transform,
+    build_autoaugment_transform,
+    build_batch_transform,
+    build_eval_transform,
+    build_randaugment_transform,
+    build_threeaugment_transform,
+    build_timm_randaugment_transform,
+)
 from vision_transformers_cifar.loggers import configure_logger, logger
 from vision_transformers_cifar.modules import VisionTransformerLightningModule
 from vision_transformers_cifar.utils.files import save_json
 from vision_transformers_cifar.utils.torch_utils import seed_everything
 
+EPOCHS = 50
+BATCH_SIZE = 128
+
 if __name__ == "__main__":
-    config = RunConfig()
+    config = RunConfig(
+        run_name_suffix="vit-0.8M_timm-randaugment",
+        data=DataConfig(
+            batch_size=BATCH_SIZE,
+        ),
+        model=ViTModelConfig(
+            embed_dim=128,
+            hidden_dim=256,
+            num_heads=4,
+            dropout=0.1,
+        ),
+        trainer=TrainerConfig(max_epochs=EPOCHS),
+    )
 
     run_name_suffix = f"_{config.run_name_suffix}" if config.run_name_suffix else ""
     run_dirpath = config.run_dirpath / f"{NOW}{run_name_suffix}"
@@ -29,14 +56,30 @@ if __name__ == "__main__":
 
     seed_everything(config.seed)
 
-    transform = build_transform(image_size=config.data.image_size)
-    train_ds = CIFAR10Dataset(split=config.data.train_split, transform=transform)
-    val_ds = CIFAR10Dataset(split=config.data.val_split, transform=transform)
+    train_transforms = build_timm_randaugment_transform(image_size=config.data.image_size)
+    eval_transforms = build_eval_transform(image_size=config.data.image_size)
+    batch_transform = build_batch_transform(
+        mixup_enabled=config.data.mixup_enabled,
+        cutmix_enabled=config.data.cutmix_enabled,
+        num_classes=config.model.num_classes,
+    )
+
+    train_ds = CIFAR10Dataset(split=config.data.train_split, transform=train_transforms)
+    val_ds = CIFAR10Dataset(split=config.data.val_split, transform=eval_transforms)
     test_ds = (
-        CIFAR10Dataset(split=config.data.test_split, transform=transform)
+        CIFAR10Dataset(split=config.data.test_split, transform=eval_transforms)
         if config.data.test_split is not None
         else None
     )
+
+    train_collate_fn = default_collate
+    if batch_transform is not None:
+        train_collate_fn = v2.Compose(
+            [
+                default_collate,
+                batch_transform,
+            ]
+        )
 
     datamodule = DataModule(
         train_ds=train_ds,
@@ -49,6 +92,7 @@ if __name__ == "__main__":
         drop_last=config.data.drop_last,
         shuffle=config.data.shuffle,
         seed=config.seed,
+        collate_fn_train=train_collate_fn,
     )
 
     loggers = []

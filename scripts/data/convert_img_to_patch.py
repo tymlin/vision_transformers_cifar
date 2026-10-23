@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
 import torchvision
 
-from vision_transformers_cifar.data import CIFAR10Dataset, DataModule, DatasetSplit, build_transform
+from vision_transformers_cifar.data import CIFAR10Dataset, DataModule, DatasetSplit, build_basic_transform
 from vision_transformers_cifar.loggers import logger
 from vision_transformers_cifar.models import img_to_patch
 
 if __name__ == "__main__":
-    transform = build_transform()
+    transform = build_basic_transform()
     train_ds = CIFAR10Dataset(split=DatasetSplit.TRAIN, transform=transform)
     test_ds = CIFAR10Dataset(split=DatasetSplit.TEST, transform=transform)
 

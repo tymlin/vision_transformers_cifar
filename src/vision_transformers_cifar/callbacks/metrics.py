@@ -26,7 +26,14 @@ class FinalMetricsCallback(Callback):
 
 
 class MetricsPlotCallback(Callback):
-    def on_fit_end(self, trainer, pl_module):
+    def on_train_epoch_start(self, trainer, pl_module):
+        if trainer.current_epoch > 0:
+            self._plot_metrics(trainer)
+
+    def on_train_end(self, trainer, pl_module):
+        self._plot_metrics(trainer)
+
+    def _plot_metrics(self, trainer):
         if not trainer.is_global_zero:
             return
 

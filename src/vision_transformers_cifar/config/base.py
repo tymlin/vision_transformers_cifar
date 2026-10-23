@@ -65,6 +65,14 @@ class DataConfig(BaseConfig):
         default=True,
         description="Whether to shuffle training samples each epoch. Does not affect validation or testing.",
     )
+    mixup_enabled: bool = Field(
+        default=False,
+        description="Enable MixUp augmentation for training batches.",
+    )
+    cutmix_enabled: bool = Field(
+        default=False,
+        description="Enable CutMix augmentation for training batches.",
+    )
 
     @model_validator(mode="after")
     def validate_workers(self) -> Self:
@@ -154,12 +162,12 @@ class OptimizerConfig(BaseConfig):
         description="Optimizer used to update model parameters: AdamW or Adam.",
     )
     lr: float = Field(
-        default=3e-4,
+        default=5e-4,
         gt=0,
         description="Learning rate used by the optimizer.",
     )
     weight_decay: float = Field(
-        default=0.01,
+        default=0.001,
         ge=0,
         description="Weight decay coefficient used by the optimizer.",
     )

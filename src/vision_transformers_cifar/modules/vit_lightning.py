@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         SchedulerConfig,
         ViTModelConfig,
     )
+from torchmetrics.functional.classification import multiclass_accuracy
 
 
 class VisionTransformerLightningModule(L.LightningModule):
@@ -57,18 +58,38 @@ class VisionTransformerLightningModule(L.LightningModule):
         if not self.scheduler_config.enabled:
             return optimizer
 
-        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
-            T_max=self.trainer.max_epochs,
+            max_lr=self.optimizer_config.lr,
+            total_steps=self.trainer.estimated_stepping_batches,
+            pct_start=0.05,
+            anneal_strategy="cos",
+            cycle_momentum=False,
+            final_div_factor=2,
         )
-        return {"optimizer": optimizer, "lr_scheduler": {"scheduler": lr_scheduler, "interval": "epoch"}}
+
+        config = {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": lr_scheduler,
+                "interval": "step",
+            },
+        }
+        return config
 
     def _common_step(self, batch, mode="train"):
         imgs, labels = batch
         preds = self.model(imgs)
         loss = self.loss_fn(preds, labels)
 
-        accuracy = (preds.argmax(dim=-1) == labels).float().mean()
+        metric_labels = labels.argmax(dim=1) if labels.ndim == 2 else labels
+
+        accuracy = multiclass_accuracy(
+            preds,
+            metric_labels,
+            num_classes=self.model_config.num_classes,
+            average="micro",
+        )
 
         self.log(f"{mode}_loss", loss, prog_bar=True, on_epoch=True)
         self.log(f"{mode}_acc", accuracy, prog_bar=True, on_epoch=True)

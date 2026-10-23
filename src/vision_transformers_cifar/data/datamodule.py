@@ -148,6 +148,15 @@ class DataModule:
             msg += f"\n\t{split.rjust(10)}: {ds_info}"
         logger.info(msg)
 
+        msg = "Transforms summary:"
+        for split in DatasetSplit:
+            dataset = self.get_dataset(split)
+            if dataset is None:
+                continue
+            transform_info = "\n".join(f"\t\t{line}" for line in str(dataset.transform).splitlines())
+            msg += f"\n\t{split.value}:\n{transform_info}"
+        logger.info(msg)
+
         msg = "Dataloader batches summary:"
         for split in DatasetSplit:
             dl = self.get_dataloader(split)
