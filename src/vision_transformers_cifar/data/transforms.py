@@ -20,7 +20,7 @@ def build_basic_transform(image_size: tuple[int, int] | None = None) -> v2.Compo
     return transform
 
 
-def build_standard_transform(image_size: tuple[int, int] | None = None) -> list[v2.Transform]:
+def _build_spatial_transforms(image_size: tuple[int, int] | None = None) -> list[v2.Transform]:
     image_size = image_size if image_size is not None else (32, 32)
     steps: list[v2.Transform] = [
         v2.ToImage(),
@@ -31,10 +31,21 @@ def build_standard_transform(image_size: tuple[int, int] | None = None) -> list[
     return steps
 
 
+def build_standard_transform(image_size: tuple[int, int] | None = None) -> v2.Compose:
+    transform = v2.Compose(
+        [
+            *_build_spatial_transforms(image_size),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=CIFAR10_MEAN, std=CIFAR10_STD),
+        ]
+    )
+    return transform
+
+
 def build_randaugment_transform(image_size: tuple[int, int] | None = None) -> v2.Compose:
     transform = v2.Compose(
         [
-            *build_standard_transform(image_size),
+            *_build_spatial_transforms(image_size),
             v2.RandAugment(num_ops=2, magnitude=9),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CIFAR10_MEAN, std=CIFAR10_STD),
@@ -46,7 +57,7 @@ def build_randaugment_transform(image_size: tuple[int, int] | None = None) -> v2
 def build_autoaugment_transform(image_size: tuple[int, int] | None = None) -> v2.Compose:
     transform = v2.Compose(
         [
-            *build_standard_transform(image_size),
+            *_build_spatial_transforms(image_size),
             v2.AutoAugment(policy=v2.AutoAugmentPolicy.CIFAR10),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CIFAR10_MEAN, std=CIFAR10_STD),
@@ -58,7 +69,7 @@ def build_autoaugment_transform(image_size: tuple[int, int] | None = None) -> v2
 def build_threeaugment_transform(image_size: tuple[int, int] | None = None) -> v2.Compose:
     transform = v2.Compose(
         [
-            *build_standard_transform(image_size),
+            *_build_spatial_transforms(image_size),
             v2.RandomChoice(
                 [
                     v2.Grayscale(num_output_channels=3),
@@ -76,7 +87,7 @@ def build_threeaugment_transform(image_size: tuple[int, int] | None = None) -> v
 def build_augmix_transform(image_size: tuple[int, int] | None = None) -> v2.Compose:
     transform = v2.Compose(
         [
-            *build_standard_transform(image_size),
+            *_build_spatial_transforms(image_size),
             v2.AugMix(),
             v2.ToDtype(torch.float32, scale=True),
             v2.Normalize(mean=CIFAR10_MEAN, std=CIFAR10_STD),
@@ -102,7 +113,7 @@ def build_timm_randaugment_transform(
 
     transform = v2.Compose(
         [
-            *build_standard_transform(image_size),
+            *_build_spatial_transforms(image_size),
             v2.ToPILImage(),
             randaugment,
             v2.ToImage(),

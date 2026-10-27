@@ -16,9 +16,11 @@ from vision_transformers_cifar.data import (
     DataModule,
     build_augmix_transform,
     build_autoaugment_transform,
+    build_basic_transform,
     build_batch_transform,
     build_eval_transform,
     build_randaugment_transform,
+    build_standard_transform,
     build_threeaugment_transform,
     build_timm_randaugment_transform,
 )
@@ -27,14 +29,16 @@ from vision_transformers_cifar.modules import VisionTransformerLightningModule
 from vision_transformers_cifar.utils.files import save_json
 from vision_transformers_cifar.utils.torch_utils import seed_everything
 
-EPOCHS = 50
+EPOCHS = 200
 BATCH_SIZE = 128
 
 if __name__ == "__main__":
     config = RunConfig(
-        run_name_suffix="vit-0.8M_timm-randaugment",
+        run_name_suffix="vit-0.8M_augmix_label-smoothing-0.1_cutmix-mixup_init-weights",
         data=DataConfig(
             batch_size=BATCH_SIZE,
+            cutmix_enabled=True,
+            mixup_enabled=True,
         ),
         model=ViTModelConfig(
             embed_dim=128,
@@ -56,7 +60,7 @@ if __name__ == "__main__":
 
     seed_everything(config.seed)
 
-    train_transforms = build_timm_randaugment_transform(image_size=config.data.image_size)
+    train_transforms = build_augmix_transform(image_size=config.data.image_size)
     eval_transforms = build_eval_transform(image_size=config.data.image_size)
     batch_transform = build_batch_transform(
         mixup_enabled=config.data.mixup_enabled,

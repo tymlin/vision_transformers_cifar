@@ -45,7 +45,8 @@ class VisionTransformerLightningModule(L.LightningModule):
         )
         self.model = VisionTransformer(**self.model_config.model_dump())
 
-        self.loss_fn = nn.CrossEntropyLoss()
+        # self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     def forward(self, x):
         return self.model(x)

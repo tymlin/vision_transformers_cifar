@@ -65,6 +65,8 @@ class VisionTransformer(BaseModel):
         # num of patches + one class token
         self.pos_embedding = nn.Parameter(torch.randn(1, 1 + num_patches, embed_dim))
 
+        self._init_weights()
+
     def forward(self, x: Tensor) -> Tensor:
         # Preprocess input
         patches = img_to_patch(
@@ -88,3 +90,22 @@ class VisionTransformer(BaseModel):
         out = self.mlp_head(cls)
 
         return out
+
+    def _init_weights(self) -> None:
+        for module in self.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.trunc_normal_(module.weight, std=0.02)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+
+            elif isinstance(module, nn.MultiheadAttention):
+                nn.init.trunc_normal_(module.in_proj_weight, std=0.02)
+                if module.in_proj_bias is not None:
+                    nn.init.zeros_(module.in_proj_bias)
+
+            elif isinstance(module, nn.LayerNorm):
+                nn.init.ones_(module.weight)
+                nn.init.zeros_(module.bias)
+
+        nn.init.trunc_normal_(self.cls_token, std=0.02)
+        nn.init.trunc_normal_(self.pos_embedding, std=0.02)

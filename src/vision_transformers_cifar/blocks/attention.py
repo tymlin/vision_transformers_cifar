@@ -22,12 +22,14 @@ class AttentionBlock(nn.Module):
 
         self.layer_norm_1 = nn.LayerNorm(embed_dim)
         self.attn = nn.MultiheadAttention(embed_dim, num_heads)
+        self.attn_dropout = nn.Dropout(dropout)
         self.layer_norm_2 = nn.LayerNorm(embed_dim)
         self.linear = nn.Sequential(
             nn.Linear(embed_dim, hidden_dim),
             nn.GELU(),
             nn.Dropout(dropout),
             nn.Linear(hidden_dim, embed_dim),
+            nn.GELU(),
             nn.Dropout(dropout),
         )
 
@@ -36,7 +38,7 @@ class AttentionBlock(nn.Module):
         # yln1 shape: (B, L, E)
         att_o, _ = self.attn(yln1, yln1, yln1)
         # att_o shape: (B, L, E)
-        y1 = x + att_o
+        y1 = x + self.attn_dropout(att_o)
         # y1 shape: (B, L, E)
 
         yln2 = self.layer_norm_2(y1)

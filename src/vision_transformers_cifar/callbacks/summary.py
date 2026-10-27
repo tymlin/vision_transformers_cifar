@@ -1,4 +1,5 @@
 import textwrap
+from inspect import signature
 
 from lightning.pytorch.callbacks import Callback, RichModelSummary
 from rich import get_console
@@ -36,7 +37,12 @@ class ModuleSummaryCallback(Callback):
             details_text = textwrap.indent("\n".join(details), "    ")
             scheduler_summaries.append(f"{type(scheduler).__name__}:\n{details_text}")
         scheduler_info = "\n\n".join(scheduler_summaries) or "None"
-        loss_fn_info = str(pl_module.loss_fn)
+        loss_fn = pl_module.loss_fn
+        loss_kwargs = {
+            name: getattr(loss_fn, name) for name in signature(type(loss_fn)).parameters if hasattr(loss_fn, name)
+        }
+        loss_kwargs_info = ", ".join(f"{name}={value!r}" for name, value in loss_kwargs.items())
+        loss_fn_info = f"{type(loss_fn).__name__}({loss_kwargs_info})"
 
         module_info_dict = {
             "Model structure": model_structure,
