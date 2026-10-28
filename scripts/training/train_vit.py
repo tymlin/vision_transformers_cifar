@@ -29,7 +29,7 @@ from vision_transformers_cifar.modules import VisionTransformerLightningModule
 from vision_transformers_cifar.utils.files import save_json
 from vision_transformers_cifar.utils.torch_utils import seed_everything
 
-EPOCHS = 200
+EPOCHS = 500
 BATCH_SIZE = 128
 
 if __name__ == "__main__":
